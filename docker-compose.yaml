@@ -1,0 +1,144 @@
+services:
+  ocr-server:
+    build:
+      context: ./ocr-server
+      dockerfile: Dockerfile
+      target: development
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    container_name: ocr-server
+    env_file:
+      - ./ocr-server/.env
+    ports:
+      - 50051:50051
+      - 80:80 # expose port 80 of container to 80 of host to let archive.ubuntu.com able to download without connection refused
+    volumes:
+      - ./ocr-server:/usr/ocr/src
+      - ocr_server_env:/usr/ocr/src/env
+  
+  db:
+    image: postgres:latest
+    container_name: db
+    restart: always
+    user: postgres
+    env_file:
+      - ./api-server/.env.db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+    ports:
+      - 5432:5432
+    volumes:
+      - db:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    ports:
+    - 5050:80
+    env_file:
+      - ./api-server/.env.db
+    volumes:
+      - ./data/pgadmin:/var/lib/pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
+
+  cache:
+    image: redis:7.4-alpine
+    restart: always
+    ports:
+      - 6379:6379
+    command: redis-server --save 20 1 --loglevel warning --requirepass $${REDIS_PASSWORD} # tells reddit to save database every 20 seconds if at least one change was made and set logging to show warnings only
+    environment:
+      - REDIS_PASSWORD=redis1234
+    volumes:
+      - cache:/data
+
+  rabbitmq:
+    image: rabbitmq
+    container_name: rabbitmq
+    ports:
+      - 5672:5672
+    depends_on:
+      db:
+        condition: service_healthy
+  
+  auth:
+    build: 
+      context: ./api-server
+      dockerfile: ./apps/auth/Dockerfile
+      target: development
+    container_name: auth
+    command: npm run start:dev auth
+    env_file:
+      - ./api-server/apps/auth/.env.development
+    ports:
+      - 3100:3000
+    volumes:
+      - ./api-server:/usr/src/app
+      - node_modules:/usr/src/app/node_modules
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      cache:
+        condition: service_started
+      
+  vendors:
+    build:
+      context: ./api-server
+      dockerfile: ./apps/vendors/Dockerfile
+      target: development
+    container_name: vendors
+    command: npm run start:dev vendors
+    env_file:
+      - ./api-server/apps/vendors/.env.development
+    ports:
+      - 3101:3000
+    volumes:
+      - ./api-server:/usr/src/app
+      - node_modules:/usr/src/app/node_modules
+    depends_on:
+      - ocr-server
+      - auth
+  payments:
+    build:
+      context: ./api-server
+      dockerfile: ./apps/payments/Dockerfile
+      target: development
+    container_name: payments
+    command: npm run start:dev payments
+    env_file:
+      - ./api-server/apps/payments/.env.development
+    ports:
+      - 3102:3000
+    volumes:
+      - ./api-server:/usr/src/app
+      - node_modules:/usr/src/app/node_modules
+    depends_on:
+      - ocr-server
+      - auth
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    command: start --all --config /etc/ngrok.yml
+    volumes:
+        - ./ngrok.yml:/etc/ngrok.yml
+    ports:
+      - 4040:4040
+    depends_on:
+      - vendors
+
+volumes:
+  cache:
+  db:
+  ocr_server_env: 
+  node_modules:

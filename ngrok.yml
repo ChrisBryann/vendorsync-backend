@@ -1,0 +1,12 @@
+version: '2'
+authtoken: 32lBk3bmbyXFz1uEVXusPRmWw6X_3soyW8cMY22D6vYWBnAE7
+
+tunnels:
+  vendors:
+    addr: vendors:3000
+    proto: http
+
+  pgadmin:
+    addr: pgadmin:80
+    proto: http
+
