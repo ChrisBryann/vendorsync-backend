@@ -71,10 +71,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  bullmq:
+    image: redis:latest
+    container_name: bullmq
+    ports:
+      - 6780:6379
   
   auth:
     build: 
-      context: ./api-server
+      context: ./api-server/
       dockerfile: ./apps/auth/Dockerfile
       target: development
     container_name: auth
@@ -94,7 +99,7 @@ services:
       
   vendors:
     build:
-      context: ./api-server
+      context: ./api-server/
       dockerfile: ./apps/vendors/Dockerfile
       target: development
     container_name: vendors
@@ -109,15 +114,15 @@ services:
     depends_on:
       - ocr-server
       - auth
-  payments:
+  websockets:
     build:
-      context: ./api-server
-      dockerfile: ./apps/payments/Dockerfile
+      context: ./api-server/
+      dockerfile: ./apps/websockets/Dockerfile
       target: development
-    container_name: payments
-    command: npm run start:dev payments
+    container_name: websockets
+    command: npm run start:dev websockets
     env_file:
-      - ./api-server/apps/payments/.env.development
+      - ./api-server/apps/websockets/.env.development
     ports:
       - 3102:3000
     volumes:

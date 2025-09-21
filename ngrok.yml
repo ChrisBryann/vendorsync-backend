@@ -5,6 +5,10 @@ tunnels:
   vendors:
     addr: vendors:3000
     proto: http
+  
+  websockets:
+    addr: websockets:3000
+    proto: http
 
   pgadmin:
     addr: pgadmin:80
