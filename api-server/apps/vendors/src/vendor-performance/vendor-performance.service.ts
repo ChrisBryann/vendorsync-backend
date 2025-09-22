@@ -165,6 +165,8 @@ export class VendorPerformanceService implements OnModuleInit, OnModuleDestroy {
       .createQueryBuilder('vendorPerformanceMetrics')
       .innerJoin('vendorPerformanceMetrics.user', 'user')
       .addSelect('user.id')
+      .innerJoin('vendorPerformanceMetrics.vendor', 'vendor')
+      .addSelect('vendor.name')
       .where('user.id = :userId', { userId })
       .getMany();
 

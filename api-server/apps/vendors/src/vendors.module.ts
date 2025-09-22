@@ -60,7 +60,8 @@ import { VendorPerformanceModule } from './vendor-performance/vendor-performance
       useFactory: (configService: ConfigService) => ({
         stores: [
           new KeyvRedis(
-            `redis://${configService.getOrThrow<string>('REDIS_HOST')}:${configService.getOrThrow<string>('REDIS_PORT')}`,
+            `redis://:${configService.getOrThrow<string>('REDIS_PASSWORD')}@${configService.getOrThrow<string>('REDIS_HOST')}:${configService.getOrThrow<string>('REDIS_PORT')}`,
+          
           ),
         ],
         ttl: 10 * 60,
