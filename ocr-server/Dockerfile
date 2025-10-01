@@ -28,6 +28,8 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update && apt-get install -y poppler-utils && rm -rf /var/lib/apt/lists/*
+
 # Create symbolic link for python and pip
 RUN ln -s /usr/bin/python3 /usr/bin/python
 

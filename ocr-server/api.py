@@ -3,7 +3,7 @@ import asyncio
 from llm import BaseLLM
 import os
 from PIL import Image
-
+from pdf2image import convert_from_bytes
 import numpy as np
 import io
 import grpc
@@ -22,15 +22,28 @@ class InvoiceOCRServicer(ocr_pb2_grpc.InvoiceOCRServicer):
         self.ocr = BaseOCR(text_detection_model_dir="C:\\Users\\chris\\.paddlex\\official_models", text_recognition_model_dir="C:\\Users\\chris\\.paddlex\\official_models")
         self.llm = BaseLLM()
     async def UploadInvoice(self, request, context: grpc.aio.ServicerContext) -> ocr_pb2.UploadInvoiceResponse:
-        logging.info('Uploading Invoice...')
-        image_bytes = request.image_data # a bytes object
-        image = Image.open(io.BytesIO(image_bytes))
-        image_array = np.array(image)
-        invoice_data = await self.ocr.invoke(image_array)
-        logging.info('Invoice processed by the OCR...')
-        # content = await self.llm.predict_invoice(invoice_data)
-        # print(content.model_dump())
-        return ocr_pb2.UploadInvoiceResponse(result=invoice_data)
+        print(request.file_type)
+        if 'pdf' in request.file_type:
+            logging.info('Uploading Invoice...')
+            pages = convert_from_bytes(request.image_data)
+            result = []
+            for page in pages:
+                print(f'page: ${page}')
+                page_array = np.array(page)
+                invoice_data = await self.ocr.invoke(page_array)
+                result.extend(invoice_data)
+            logging.info('Invoice processed by the OCR...')
+            return ocr_pb2.UploadInvoiceResponse(result=result)
+        elif 'image' in request.file_type:        
+            logging.info('Uploading Invoice...')
+            image_bytes = request.image_data # a bytes object
+            image = Image.open(io.BytesIO(image_bytes))
+            image_array = np.array(image)
+            invoice_data = await self.ocr.invoke(image_array)
+            logging.info('Invoice processed by the OCR...')
+            # content = await self.llm.predict_invoice(invoice_data)
+            # print(content.model_dump())
+            return ocr_pb2.UploadInvoiceResponse(result=invoice_data)
         
         
 async def serve() -> None:

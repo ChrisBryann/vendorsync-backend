@@ -1,0 +1,1 @@
+export const CLERK_PROVIDER = 'CLERK_CLIENT';

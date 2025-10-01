@@ -28,13 +28,22 @@
         "tsConfigPath": "apps/vendors/tsconfig.app.json"
       }
     },
-    "payments": {
-      "type": "application",
-      "root": "apps/payments",
-      "entryFile": "main",
-      "sourceRoot": "apps/payments/src",
+    "common": {
+      "type": "library",
+      "root": "libs/common",
+      "entryFile": "index",
+      "sourceRoot": "libs/common/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/payments/tsconfig.app.json"
+        "tsConfigPath": "libs/common/tsconfig.lib.json"
+      }
+    },
+    "websockets": {
+      "type": "application",
+      "root": "apps/websockets",
+      "entryFile": "main",
+      "sourceRoot": "apps/websockets/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/websockets/tsconfig.app.json"
       }
     }
   }
